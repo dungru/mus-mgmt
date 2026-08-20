@@ -1,0 +1,19 @@
+# Runtime dependencies. Resolve updates with Python 3.10 and pip-tools.
+pytest==9.1.1
+allure-pytest==2.16.0
+textfsm==2.1.0
+snappi==1.61.0
+scapy==2.7.0
+ansible==10.7.0
+pyrsistent==0.20.0
+grpcio==1.80.0
+protobuf==6.33.6
+requests==2.34.2
+paramiko==5.0.0
+pexpect==4.9.0
+flaky==3.8.1
+matplotlib==3.10.9
+# Newer kiwisolver releases have dropped Python 3.10 support.
+kiwisolver==1.4.9
+ixnetwork-restpy==1.11.0
+-e git+https://github.com/chestercheng/snappi-ixnetwork.git@1c67c783dceb777f727c57e4efe4fa815ef0a297#egg=snappi-ixnetwork

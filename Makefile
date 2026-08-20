@@ -13,10 +13,12 @@ endif
 
 
 init:
-	@pipenv install --ignore-pipfile
-	@pipenv install --ignore-pipfile --dev
-	@pipenv run pre-commit install
-	@pipenv run pre-commit install --hook-type commit-msg
+	@python3 -m venv .venv
+	@.venv/bin/python -m pip install --upgrade pip
+	@.venv/bin/python -m pip install --requirement requirements-dev.txt
+	@.venv/bin/pre-commit install
+	@.venv/bin/pre-commit install --hook-type commit-msg
+	@echo Environment-ready:.venv
 
 
 fmt: _find_py

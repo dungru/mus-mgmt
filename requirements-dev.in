@@ -1,0 +1,9 @@
+-r requirements.in
+
+black==26.5.1
+reorder-python-imports==3.17.0
+flake8==7.3.0
+ipython==8.39.0
+pre-commit==4.6.2
+pdbpp==0.12.1
+python-lsp-server==1.15.0
