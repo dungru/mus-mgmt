@@ -1,8 +1,68 @@
 # Wi-Fi functional tests
 
-`cases/wifi_restart_procfs.yml` is the test catalogue shown in Allure. It is
-the user-facing source of truth: every case has a readable title, purpose and
-expected result. The POSIX shell script remains the DUT-side implementation.
+The human-readable case titles, purposes, and expected results live beside the
+pytest implementation in `test_wifi_restart_procfs.py`. The DUT-side POSIX
+shell implementation is stored under `on_board_scripts/`, so it can also be
+given directly to an RD or customer whose DUT has only a shell environment.
+Every script follows the shared `MUS_RESULT_V1` on-board test contract.
+
+## Available test modules
+
+| pytest module | DUT-side script | cases | state-changing cases |
+| --- | --- | ---: | --- |
+| `test_wifi_restart_procfs.py` | `test_wifi_restart_procfs.sh` | 7 | 2-7 |
+| `test_channels_json.py` | `test_channels_json.sh` | 7 | 5-6 |
+| `test_rrm_cross_config.py` | `test_rrm_cross_config.sh` | 1 | 1 |
+| `test_rrm_interface_downup.py` | `test_rrm_interface_downup.sh` | 1 | 1 |
+| `test_interface_downup_during_fwdl.py` | `test_interface_downup_during_fwdl.sh` | 4 | 1-4 |
+
+The RRM cross-configuration test refuses to modify a non-empty neighbor
+database. It never uses `dmesg -c`, and it verifies that databases originally
+found empty are empty again after the test. The FWDL regression takes a list
+and UP/DOWN snapshot of the original Wi-Fi interfaces, recreates the configured
+stack with `wifi restart`, then verifies every original interface and state.
+
+## Test lifecycle and failure policy
+
+Before any Wi-Fi case, the framework loads the selected environment, optionally
+applies its DUT config bundle, optionally reboots, and verifies SSH plus a DUT
+shell command. These actions appear in Allure as **Framework setup**. A setup
+error is reported as framework infrastructure failure rather than a Wi-Fi case
+failure.
+
+Each Wi-Fi script is copied only once per test module to its own fixed `/tmp`
+path. For example, the procfs suite uses:
+
+```text
+/tmp/mus-wifi-restart-procfs.sh
+```
+
+All selected pytest cases in that module share the script. Each mutating case
+snapshots the interface UP/DOWN state and verifies restoration after execution. In a normal
+RD run, pytest stops at the first failure and deliberately leaves both the DUT
+state and script in place. The Allure teardown attachment shows the remote path
+and an SSH replay command. When all selected cases pass, the script is removed.
+
+Run every selected Wi-Fi module directly:
+
+```bash
+make test TYPE=functional_tests ENV=dut115 TESTCASE=wifi
+```
+
+Run one channels.json case, for example the read-only presence check:
+
+```bash
+make test TYPE=functional_tests ENV=dut115 \
+  TESTCASE=wifi/test_channels_json.py OPTS="-k case-1"
+```
+
+Run one new module/case with pytest selection, for example FWDL case 1:
+
+```bash
+make test TYPE=functional_tests ENV=dut115 \
+  TESTCASE=wifi/test_interface_downup_during_fwdl.py \
+  OPTS="-k case-1"
+```
 
 Run all seven named Wi-Fi cases (Ethernet management and SSH remain available):
 
@@ -19,6 +79,14 @@ make test TYPE=functional_tests ENV=dut115 \
   OPTS="--wifi-case 6"
 ```
 
+Run several selected cases in order:
+
+```bash
+make test TYPE=functional_tests ENV=dut115 \
+  TESTCASE=wifi/test_wifi_restart_procfs.py \
+  OPTS="--wifi-case 1,3,7"
+```
+
 Apply the declared `/etc/config` and `/etc/wireless` bundle, reboot, wait for
 SSH, then run the selected cases:
 
@@ -28,8 +96,22 @@ make test TYPE=functional_tests ENV=dut115 \
   OPTS="--apply-dut-config --reboot-after-config"
 ```
 
-Each Allure result contains the test purpose, expected result, executed SCP and
-SSH commands, and the complete stdout/stderr collected from the DUT.
+## CI/CD execution
+
+CI should run every selected case even after an individual case fails. Add
+`--continue-on-failure`; the final teardown then removes the temporary script
+even if the test result is failing. Every case uses restore mode `always`, and
+the next case starts only after restore verification succeeds:
+
+```bash
+make test TYPE=functional_tests ENV=dut115 \
+  TESTCASE=wifi/test_wifi_restart_procfs.py \
+  OPTS="--continue-on-failure"
+```
+
+Each Allure result separates framework setup, case execution, and teardown. It
+includes configuration details, the one-time SCP/chmod actions, each SSH test
+command, parsed `MUS_RESULT_V1`, restore status, and complete DUT stdout/stderr.
 
 ## Generate and view the Allure report
 

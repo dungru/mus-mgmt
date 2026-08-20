@@ -12,6 +12,7 @@ information is added.
 ## Getting started
 
 - [Usage](usage.md): run smoke and functional tests and view Allure reports.
+- [Adding an on-board test](adding-on-board-test.md): shell contract, restore policy, and templates.
 - [Framework overview](overview.md): component responsibilities and boundaries.
 - [DUT platform adapters](dut-platforms.md): SONiC, OpenWrt, and Buildroot connections.
 

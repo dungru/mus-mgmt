@@ -9,13 +9,25 @@ NC='\033[0m'
 
 PASS_COUNT=0
 FAIL_COUNT=0
+SKIP_COUNT=0
+RESTORE_MODE="always"
+TEST_TO_RUN="all"
+TEST_STATUS="ERROR"
+RESTORE_STATUS="NOT_REQUIRED"
+SNAPSHOT_FILE="/tmp/mus-wifi-state-$$"
+SNAPSHOT_READY=0
+FINALIZED=0
+INTERRUPTED=0
 
-pass() { echo -e "${GREEN}[PASS]${NC} $1"; PASS_COUNT=$((PASS_COUNT + 1)); }
-fail() { echo -e "${RED}[FAIL]${NC} $1"; FAIL_COUNT=$((FAIL_COUNT + 1)); }
-info() { echo -e "${YELLOW}[INFO]${NC} $1"; }
+color_print() { printf '%b\n' "$1"; }
+pass() { color_print "${GREEN}[PASS]${NC} $1"; PASS_COUNT=$((PASS_COUNT + 1)); }
+fail() { color_print "${RED}[FAIL]${NC} $1"; FAIL_COUNT=$((FAIL_COUNT + 1)); }
+skip() { color_print "${YELLOW}[SKIP]${NC} $1"; SKIP_COUNT=$((SKIP_COUNT + 1)); }
+info() { color_print "${YELLOW}[INFO]${NC} $1"; }
 
 # Print usage
 usage() {
+    local exit_code=${1:-0}
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
@@ -23,13 +35,14 @@ usage() {
     echo "  -a          Run all tests (default)"
     echo "  -l          List available tests"
     echo "  -h          Show this help message"
+    echo "  --restore-mode <always|on-success|never>"
     echo ""
     echo "Examples:"
     echo "  $0              # Run all tests"
     echo "  $0 -t 1         # Run test 1 only"
     echo "  $0 -t 5         # Run test 5 only"
     echo "  $0 -l           # List all tests"
-    exit 0
+    exit "$exit_code"
 }
 
 # List available tests
@@ -84,6 +97,134 @@ get_procfs_base() {
 	else
 		echo "/proc/mt_wifi"
 	fi
+}
+
+# MUS On-board Test Contract v1 lifecycle
+interface_is_up() {
+	ifconfig "$1" 2>/dev/null | grep -q 'UP'
+}
+
+snapshot_dut_state() {
+	: > "$SNAPSHOT_FILE" || return 1
+	for iface in $(get_ra_interfaces); do
+		if interface_is_up "$iface"; then
+			printf '%s|up\n' "$iface" >> "$SNAPSHOT_FILE" || return 1
+		else
+			printf '%s|down\n' "$iface" >> "$SNAPSHOT_FILE" || return 1
+		fi
+	done
+	SNAPSHOT_READY=1
+	info "Captured pre-test interface state in $SNAPSHOT_FILE"
+}
+
+restore_dut_state() {
+	local restore_failed=0
+	local iface
+	local expected_state
+
+	info "Restoring pre-test interface state..."
+	while IFS='|' read -r iface expected_state; do
+		[ -n "$iface" ] || continue
+		if [ ! -e "/sys/class/net/$iface" ]; then
+			color_print "${RED}[RESTORE FAIL]${NC} Interface missing: $iface"
+			restore_failed=1
+			continue
+		fi
+		if ! ifconfig "$iface" "$expected_state" >/dev/null 2>&1; then
+			color_print "${RED}[RESTORE FAIL]${NC} ifconfig $iface $expected_state"
+			restore_failed=1
+		fi
+	done < "$SNAPSHOT_FILE"
+	sleep 2
+
+	while IFS='|' read -r iface expected_state; do
+		[ -n "$iface" ] || continue
+		if [ "$expected_state" = "up" ]; then
+			if ! interface_is_up "$iface"; then
+				color_print "${RED}[RESTORE FAIL]${NC} $iface is not UP"
+				restore_failed=1
+			fi
+		elif interface_is_up "$iface"; then
+			color_print "${RED}[RESTORE FAIL]${NC} $iface is not DOWN"
+			restore_failed=1
+		fi
+	done < "$SNAPSHOT_FILE"
+
+	if [ "$restore_failed" -eq 0 ]; then
+		color_print "${GREEN}[RESTORE PASS]${NC} Original interface state restored"
+		return 0
+	fi
+	return 1
+}
+
+emit_mus_result() {
+	printf 'MUS_RESULT_V1|case=%s|test=%s|restore=%s|passed=%s|failed=%s|skipped=%s\n' \
+		"$TEST_TO_RUN" "$TEST_STATUS" "$RESTORE_STATUS" \
+		"$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
+}
+
+finalize_run() {
+	local requested_exit=$1
+	local final_exit=$requested_exit
+	local should_restore=0
+
+	FINALIZED=1
+	trap - EXIT HUP INT TERM
+
+	if [ "$INTERRUPTED" -eq 1 ]; then
+		TEST_STATUS="ERROR"
+		final_exit=2
+	elif [ "$requested_exit" -eq 2 ] || [ "$requested_exit" -eq 4 ]; then
+		TEST_STATUS="ERROR"
+	elif [ "$SKIP_COUNT" -gt 0 ] && [ "$PASS_COUNT" -eq 0 ] && [ "$FAIL_COUNT" -eq 0 ]; then
+		TEST_STATUS="SKIP"
+		final_exit=77
+	elif [ "$FAIL_COUNT" -gt 0 ]; then
+		TEST_STATUS="FAIL"
+		final_exit=1
+	else
+		TEST_STATUS="PASS"
+		final_exit=0
+	fi
+
+	if [ "$SNAPSHOT_READY" -eq 1 ]; then
+		case "$RESTORE_MODE" in
+			always) should_restore=1 ;;
+			on-success)
+				if [ "$TEST_STATUS" = "PASS" ] || [ "$TEST_STATUS" = "SKIP" ]; then
+					should_restore=1
+				else
+					RESTORE_STATUS="PRESERVED"
+				fi
+				;;
+			never) RESTORE_STATUS="PRESERVED" ;;
+		esac
+
+		if [ "$should_restore" -eq 1 ]; then
+			if restore_dut_state; then
+				RESTORE_STATUS="PASS"
+			else
+				RESTORE_STATUS="FAIL"
+				final_exit=3
+			fi
+		fi
+	fi
+
+	rm -f "$SNAPSHOT_FILE"
+	emit_mus_result
+	exit "$final_exit"
+}
+
+on_exit() {
+	local exit_code=$?
+	if [ "$FINALIZED" -eq 0 ]; then
+		finalize_run "$exit_code"
+	fi
+}
+
+on_signal() {
+	INTERRUPTED=1
+	exit 2
 }
 
 # Test 1: Interface bring-up creates proc entries
@@ -383,7 +524,7 @@ test_wifi_reload() {
 
     # Check if wifi command exists
     if ! command -v wifi >/dev/null 2>&1; then
-        info "wifi command not found, skipping reload test"
+        skip "wifi command not found; reload test is not applicable"
         return
     fi
 
@@ -434,7 +575,7 @@ test_wifi_restart() {
 
     # Check if wifi command exists
     if ! command -v wifi >/dev/null 2>&1; then
-        info "wifi command not found, skipping restart test"
+        skip "wifi command not found; restart test is not applicable"
         return
     fi
 
@@ -501,45 +642,73 @@ run_test() {
         5) test_all_interfaces_restart ;;
         6) test_wifi_reload ;;
         7) test_wifi_restart ;;
-        *) echo -e "${RED}ERROR: Invalid test number: $test_num${NC}"; usage ;;
+        *) color_print "${RED}ERROR: Invalid test number: $test_num${NC}"; usage ;;
     esac
 }
 
 # Main execution
 main() {
-    # Parse command line options
-    local TEST_TO_RUN="all"
-
-    while getopts "t:alh" opt; do
-        case $opt in
-            t) TEST_TO_RUN="$OPTARG" ;;
-            a) TEST_TO_RUN="all" ;;
-            l) list_tests ;;
-            h) usage ;;
-            *) usage ;;
+    # Parse the portable MUS contract command line.
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -t)
+                shift
+                [ "$#" -gt 0 ] || usage 4
+                TEST_TO_RUN="$1"
+                ;;
+            -a) TEST_TO_RUN="all" ;;
+            -l) list_tests ;;
+            -h) usage 0 ;;
+            --restore-mode)
+                shift
+                [ "$#" -gt 0 ] || usage 4
+                RESTORE_MODE="$1"
+                ;;
+            --restore-mode=*) RESTORE_MODE=${1#*=} ;;
+            *)
+                color_print "${RED}ERROR: Unknown option: $1${NC}"
+                usage 4
+                ;;
         esac
+        shift
     done
+
+    case "$RESTORE_MODE" in
+        always|on-success|never) ;;
+        *)
+            color_print "${RED}ERROR: Invalid restore mode: $RESTORE_MODE${NC}"
+            usage 4
+            ;;
+    esac
+
+    trap on_exit EXIT
+    trap on_signal HUP INT TERM
 
     info "WiFi Restart Procfs Verification"
     info "================================="
 
     # Check if running as root
     if [ "$(id -u)" -ne 0 ]; then
-        echo -e "${RED}ERROR: Must run as root${NC}"
-        exit 1
+        color_print "${RED}ERROR: Must run as root${NC}"
+        exit 2
     fi
 
     # Check if driver loaded
     if [ ! -d /proc/mt_wifi ] && [ ! -d /proc/mt_wifi_1 ]; then
-        echo -e "${RED}ERROR: /proc/mt_wifi and /proc/mt_wifi_1 not found - is mt_wifi driver loaded?${NC}"
-        exit 1
+        color_print "${RED}ERROR: /proc/mt_wifi and /proc/mt_wifi_1 not found - is mt_wifi driver loaded?${NC}"
+        exit 2
     fi
 
     # Check if interfaces exist
     local all_ifaces=$(get_ra_interfaces)
     if [ -z "$all_ifaces" ]; then
-        echo -e "${RED}ERROR: No ra* interfaces found in /sys/class/net/${NC}"
-        exit 1
+        color_print "${RED}ERROR: No ra* interfaces found in /sys/class/net/${NC}"
+        exit 2
+    fi
+
+    if ! snapshot_dut_state; then
+        color_print "${RED}ERROR: Failed to snapshot interface state${NC}"
+        exit 2
     fi
 
     info "Driver detected, starting tests..."
@@ -559,9 +728,8 @@ main() {
             run_test "$TEST_TO_RUN"
             echo ""
         else
-            echo -e "${RED}ERROR: Test number must be 1-7${NC}"
-            echo ""
-            usage
+            color_print "${RED}ERROR: Test number must be 1-7${NC}"
+            exit 4
         fi
     fi
 
@@ -573,13 +741,15 @@ main() {
     info "  Total:  $((PASS_COUNT + FAIL_COUNT))"
     info "========================================"
 
-    if [ $FAIL_COUNT -eq 0 ]; then
-        echo -e "${GREEN}All tests passed!${NC}"
-        exit 0
+    if [ "$FAIL_COUNT" -eq 0 ] && [ "$SKIP_COUNT" -eq 0 ]; then
+        color_print "${GREEN}All tests passed!${NC}"
+    elif [ "$SKIP_COUNT" -gt 0 ] && [ "$FAIL_COUNT" -eq 0 ]; then
+        color_print "${YELLOW}$SKIP_COUNT test(s) skipped.${NC}"
     else
-        echo -e "${RED}$FAIL_COUNT test(s) failed!${NC}"
-        exit 1
+        color_print "${RED}$FAIL_COUNT test(s) failed!${NC}"
     fi
+
+    finalize_run 0
 }
 
 main "$@"

@@ -23,6 +23,11 @@ pipeline {
       defaultValue: true,
       description: 'Generate the static Allure report after pytest'
     )
+    booleanParam(
+      name: 'CONTINUE_ON_FAILURE',
+      defaultValue: true,
+      description: 'For functional tests, run all selected cases after a failure'
+    )
   }
 
   stages {
@@ -30,10 +35,16 @@ pipeline {
       steps {
         sh '''#!/bin/bash
           set -euo pipefail
+          opts=""
+          if [ "$TEST_TYPE" = "functional_tests" ] && \
+             [ "$CONTINUE_ON_FAILURE" = "true" ]; then
+            opts="--continue-on-failure"
+          fi
           make test \
             TYPE="$TEST_TYPE" \
             ENV="$ENV" \
             TESTCASE="$TESTCASE" \
+            OPTS="$opts" \
             AUTO_REPORT="$([ "$AUTO_REPORT" = "true" ] && echo 1 || echo 0)"
         '''
       }

@@ -20,6 +20,13 @@ make test TYPE=functional_tests ENV=dut115 \
   TESTCASE=wifi/test_wifi_restart_procfs.py
 ```
 
+Interactive Wi-Fi runs stop at the first failure and preserve the DUT state for
+debugging. CI/CD runs can continue all selected cases with
+`OPTS="--continue-on-failure"`.
+
+New DUT-side shell tests use the shared `MUS_RESULT_V1` contract and the
+templates documented in [docs/adding-on-board-test.md](docs/adding-on-board-test.md).
+
 The framework uses the repository `.venv` automatically when available. Test
 results are written to `functional_tests/report` and the static Allure report
 is generated at `functional_tests/allure-report`.
