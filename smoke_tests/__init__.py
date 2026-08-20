@@ -1,0 +1,1 @@
+"""MUS team automation tests."""

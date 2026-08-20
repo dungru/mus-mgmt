@@ -1,0 +1,68 @@
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fdf1:36be:7840::/48'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan0'
+	list ports 'lan1'
+	list ports 'lan2'
+	list ports 'lan4'
+	list ports 'lan5'
+
+config device
+	option name 'lan0'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config device
+	option name 'lan1'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config device
+	option name 'lan2'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config device
+	option name 'lan3'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config device
+	option name 'lan4'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config device
+	option name 'lan5'
+	option macaddr '00:0c:43:4a:b3:46'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option ipaddr '192.168.86.115'
+
+config device
+	option name 'eth1'
+	option macaddr '02:0c:43:4a:b3:46'
+
+config interface 'wan'
+	option device 'eth1'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option device 'eth1'
+	option proto 'dhcpv6'
+
+config interface 'mgmt01'
+	option proto 'static'
+	option device 'lan3'
+	option ipaddr '192.168.5.115'
+	option netmask '255.255.255.0'
+

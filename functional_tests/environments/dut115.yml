@@ -1,0 +1,17 @@
+topology:
+  vars:
+    ansible_ssh_user: root
+  hosts:
+    dut1:
+      ansible_host: 192.168.5.115
+      vars:
+        dut_system: openwrt
+        # Shared bundle remains with the existing smoke environment until
+        # environments are migrated into a common testbeds/ directory.
+        dut_config:
+          folder: ../../openwrt_setting/dut15
+          mappings:
+            - source: config
+              destination: /etc/config
+            - source: wireless
+              destination: /etc/wireless

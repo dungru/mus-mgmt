@@ -1,0 +1,24 @@
+*.pyc
+*.pyo
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Generated test evidence and static Allure sites. Regenerate locally.
+**/report/
+**/allure-report/
+allure-results/
+htmlcov/
+.coverage
+
+tests/report
+
+*.swp
+.vscode/
+.idea/
+apis/sonic
+apis/traffic_generator
+apis/utils/packet
+apis/utils/templates
+protocol_tests
+sdk_tests
