@@ -6,6 +6,21 @@ targets through platform adapters.
 
 ## Quick start
 
+## Environment setup
+
+On the Ubuntu controller, ensure Python 3.10 or newer, `python3-venv`, and Git
+are installed. After cloning the repository, initialize the project-local Python
+environment once:
+
+```bash
+cd mus-mgmt
+make init
+```
+
+`make init` creates `.venv`, installs the locked runtime and development
+dependencies, and installs the Git commit hooks. Pipenv is not required.
+
+
 Run the OpenWrt connectivity smoke test:
 
 ```bash
