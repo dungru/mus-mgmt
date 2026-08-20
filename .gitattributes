@@ -1,0 +1,2 @@
+# DUT scripts execute under POSIX/BusyBox sh and must not contain CRLF.
+*.sh text eol=lf

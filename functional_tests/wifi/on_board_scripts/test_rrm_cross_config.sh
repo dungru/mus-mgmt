@@ -17,10 +17,18 @@ usage() { code=${1:-0}; printf 'Usage: %s -t 1 [--restore-mode always|on-success
 
 query_db() {
 	iface=$1; output=$2
-	wm=$(dmesg | wc -l)
 	iwpriv "$iface" show NeighborReportDB >/dev/null 2>&1 || return 1
-	sleep 1
-	next=$((wm + 1)); dmesg | tail -n +"$next" > "$output"
+	# Kernel ring-buffer line counts are not monotonic after old lines roll out.
+	# Keep the last complete DB block instead of clearing dmesg or using a line
+	# count watermark.
+	dmesg | awk '
+		/=== Manual Neighbor Report Database ===/ {
+			capture = 1
+			block = ""
+		}
+		capture { block = block $0 ORS }
+		END { printf "%s", block }
+	' > "$output"
 	grep -q 'Total Entries:' "$output"
 }
 
@@ -29,15 +37,18 @@ collect_elements() {
 	for proc_dir in /proc/mt_wifi /proc/mt_wifi_*; do
 		[ -d "$proc_dir" ] || continue
 		for path in "$proc_dir"/*/SelfNeighborReportElement; do
-			[ -s "$path" ] || continue
+			# procfs reports stat size 0 even when a read returns content.
+			[ -f "$path" ] || continue
 			iface=${path%/SelfNeighborReportElement}; iface=${iface##*/}
 			if grep -q "^$iface|" "$ELEMENT_FILE"; then continue; fi
 			element=$(cat "$path" 2>/dev/null)
 			[ -n "$element" ] || continue
 			printf '%s|%s|%s\n' "$iface" "$proc_dir" "$element" >> "$ELEMENT_FILE"
 			INTERFACES="$INTERFACES $iface"; ELEMENT_COUNT=$((ELEMENT_COUNT + 1))
+			info "Discovered $iface RRM element from $proc_dir"
 		done
 	done
+	info "Discovered $ELEMENT_COUNT readable RRM element(s)"
 	[ "$ELEMENT_COUNT" -ge 2 ]
 }
 

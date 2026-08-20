@@ -9,7 +9,7 @@ from functional_tests.on_board_runner import on_board_script_fixture
 
 
 on_board_script = on_board_script_fixture(
-    local_script=Path(__file__).parent / "on_board_scripts" / "test_example.sh",
+    local_script=Path(__file__).parent / "on_board_scripts" / "test_feature.sh",
     remote_script="/tmp/mus-test-example.sh",
     fixture_name="on_board_script",
 )
@@ -31,7 +31,7 @@ CASES = (
         for case in CASES
     ],
 )
-def test_example(on_board_script, case):
+def test_feature(on_board_script, case):
     allure.dynamic.title(case["title"])
     allure.dynamic.description(
         f"**Test purpose:** {case['description']}\n\n"

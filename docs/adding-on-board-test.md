@@ -15,7 +15,7 @@ Copy these templates into a new feature directory:
 
 ```text
 functional_tests/templates/on_board_test_template.sh
-functional_tests/templates/test_on_board_template.py
+functional_tests/templates/on_board_pytest_template.py
 ```
 
 The resulting feature should look like:

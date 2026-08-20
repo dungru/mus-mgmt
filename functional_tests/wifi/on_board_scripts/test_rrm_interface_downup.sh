@@ -83,7 +83,9 @@ test_interface() {
 	ifconfig "$iface" up >/dev/null 2>&1; sleep 2
 	interface_is_up "$iface" && pass "$iface is UP" || fail "$iface failed to go UP"
 	proc_file="$proc_dir/$iface/SelfNeighborReportElement"
-	if [ -s "$proc_file" ]; then pass "$proc_file is readable and non-empty"; else fail "$proc_file is missing or empty"; fi
+	# procfs reports stat size 0 even when a read returns content.
+	if [ -f "$proc_file" ]; then element=$(cat "$proc_file" 2>/dev/null); else element=''; fi
+	if [ -n "$element" ]; then pass "$proc_file is readable and non-empty"; else fail "$proc_file is missing or empty"; fi
 	if command -v iwpriv >/dev/null 2>&1; then
 		iwpriv "$iface" show SelfNeighborReportElement >/dev/null 2>&1 \
 			&& pass "iwpriv SelfNeighborReportElement works on $iface" \
