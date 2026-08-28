@@ -12,11 +12,17 @@ pass() { print_color "${GREEN}[PASS]${NC} $1"; PASS_COUNT=$((PASS_COUNT + 1)); }
 fail() { print_color "${RED}[FAIL]${NC} $1"; FAIL_COUNT=$((FAIL_COUNT + 1)); }
 skip() { print_color "${YELLOW}[SKIP]${NC} $1"; SKIP_COUNT=$((SKIP_COUNT + 1)); }
 get_all_wifi_interfaces() { ls -1 /sys/class/net 2>/dev/null | grep -E '^ra' | sort; }
-get_channels_interfaces() { get_all_wifi_interfaces | grep -E '^ra[0-9]|^rax[0-9]'; }
-get_main_interfaces() { get_channels_interfaces | grep -E '^ra0$|^rax0$'; }
-get_virtual_interfaces() { get_channels_interfaces | grep -v -E '^ra0$|^rax0$'; }
+get_channels_interfaces() { get_all_wifi_interfaces | grep -E '^ra[0-9]|^rax[0-9]|^rai[0-9]'; }
+get_main_interfaces() { get_channels_interfaces | grep -E '^ra0$|^rax0$|^rai0$'; }
+get_virtual_interfaces() { get_channels_interfaces | grep -v -E '^ra0$|^rax0$|^rai0$'; }
 interface_is_up() { ifconfig "$1" 2>/dev/null | grep -q 'UP'; }
-channels_file() { printf '/proc/mt_wifi/%s/channels.json\n' "$1"; }
+# rai* interfaces expose channels.json under /proc/mt_wifi_1/; others under /proc/mt_wifi/.
+channels_file() {
+	case "$1" in
+		rai*) printf '/proc/mt_wifi_1/%s/channels.json\n' "$1" ;;
+		*)    printf '/proc/mt_wifi/%s/channels.json\n'   "$1" ;;
+	esac
+}
 usage() { code=${1:-0}; printf 'Usage: %s -t 1-7 [--restore-mode always|on-success|never]\n' "$0"; exit "$code"; }
 
 snapshot_dut_state() {
@@ -116,6 +122,8 @@ test6() {
 test7() {
 	[ -d /proc/mt_wifi/band0 ] && fail '/proc/mt_wifi/band0 still exists' || pass '/proc/mt_wifi/band0 is absent'
 	[ -d /proc/mt_wifi/band1 ] && fail '/proc/mt_wifi/band1 still exists' || pass '/proc/mt_wifi/band1 is absent'
+	[ -d /proc/mt_wifi_1/band0 ] && fail '/proc/mt_wifi_1/band0 still exists' || pass '/proc/mt_wifi_1/band0 is absent'
+	[ -d /proc/mt_wifi_1/band1 ] && fail '/proc/mt_wifi_1/band1 still exists' || pass '/proc/mt_wifi_1/band1 is absent'
 }
 run_test() { case "$1" in 1) test1;; 2) test2;; 3) test3;; 4) test4;; 5) test5;; 6) test6;; 7) test7;; *) return 4;; esac; }
 
@@ -130,8 +138,8 @@ main() {
 	case "$TEST_TO_RUN" in all|1|2|3|4|5|6|7);; *) usage 4;; esac; case "$RESTORE_MODE" in always|on-success|never);; *) usage 4;; esac
 	trap on_exit EXIT; trap on_signal HUP INT TERM
 	[ "$(id -u)" -eq 0 ] || { info 'Must run as root'; exit 2; }
-	[ -d /proc/mt_wifi ] || { info '/proc/mt_wifi is unavailable'; exit 2; }
-	[ -n "$(get_main_interfaces)" ] || { info 'No ra0/rax0 main interfaces found'; exit 2; }
+	[ -d /proc/mt_wifi ] || [ -d /proc/mt_wifi_1 ] || { info '/proc/mt_wifi and /proc/mt_wifi_1 are unavailable'; exit 2; }
+	[ -n "$(get_main_interfaces)" ] || { info 'No ra0/rax0/rai0 main interfaces found'; exit 2; }
 	snapshot_dut_state || { info 'Could not snapshot interface state'; exit 2; }
 	if [ "$TEST_TO_RUN" = all ]; then for number in 1 2 3 4 5 6 7; do run_test "$number" || exit $?; done; else run_test "$TEST_TO_RUN" || exit $?; fi
 	finalize 0
