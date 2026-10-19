@@ -159,6 +159,7 @@ class OnBoardScriptRunner:
         deploy = self._run(
             [
                 "scp",
+                "-O",
                 "-o",
                 "BatchMode=yes",
                 "-o",

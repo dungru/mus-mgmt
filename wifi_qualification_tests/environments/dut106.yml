@@ -1,0 +1,16 @@
+topology:
+  vars:
+    ansible_ssh_user: root
+    lanforge:
+      host: "192.168.5.5"
+      port: 8080
+      user: "lanforge"
+      scripts_path: "/home/lanforge/LANforgeServer-5.5.2/scripts/py-scripts"
+      upstream_port: "1.1.eth1"
+      resource: 1
+      shelf: 1
+  hosts:
+    dut1:
+      ansible_host: 192.168.5.106
+      vars:
+        dut_system: openwrt

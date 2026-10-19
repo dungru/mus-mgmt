@@ -1,5 +1,8 @@
 SHELL := /bin/bash
 
+# Portable JRE: export so Allure CLI can find java.
+export JAVA_HOME := $(HOME)/.local/jdk-21.0.7+6-jre
+export PATH := $(JAVA_HOME)/bin:$(PATH)
 
 PY =
 _find_py:

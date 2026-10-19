@@ -1,0 +1,44 @@
+{
+    "ct_MTK7999_dut": {
+        "Notes": [
+            "MediaTek MT7999 tri-band DUT at 192.168.5.106.",
+            "ra0=2.4 GHz (ssid_idx=0), rai0=5 GHz (ssid_idx=1), rax0=6 GHz (ssid_idx=2).",
+            "SECURITY_USED is the DUT baseline; per-mode override comes from",
+            "sta_connect2.py --dut_security at test runtime.",
+            "Replace BSSID_TO_USE with real MACs before first run:",
+            "  hostapd_cli -i ra0  status | grep ^bssid",
+            "  hostapd_cli -i rai0 status | grep ^bssid",
+            "  hostapd_cli -i rax0 status | grep ^bssid"
+        ]
+    },
+    "test_dut": {
+        "USE_DUT_NAME":  "MTK7999-AP",
+        "DUT_SET_NAME":  "DUT_NAME MTK7999-AP",
+        "DUT_HW":        "MT7999 tri-band (2.4G/5G/6G)",
+        "DUT_SW":        "1.0.0",
+        "DUT_SERIAL":    "b1c0",
+        "wireless_network_dict": {
+            "ssid_idx=0": {
+                "ssid_idx":     "0",
+                "SSID_USED":    "MTK-Test-2G",
+                "SSID_PW_USED": "TestPassphrase1234",
+                "BSSID_TO_USE": "xx:xx:xx:xx:xx:xx",
+                "SECURITY_USED":"wpa2"
+            },
+            "ssid_idx=1": {
+                "ssid_idx":     "1",
+                "SSID_USED":    "MTK-Test-5G",
+                "SSID_PW_USED": "TestPassphrase1234",
+                "BSSID_TO_USE": "xx:xx:xx:xx:xx:xx",
+                "SECURITY_USED":"wpa2"
+            },
+            "ssid_idx=2": {
+                "ssid_idx":     "2",
+                "SSID_USED":    "MTK-Test-6G",
+                "SSID_PW_USED": "TestPassphrase1234",
+                "BSSID_TO_USE": "xx:xx:xx:xx:xx:xx",
+                "SECURITY_USED":"wpa3"
+            }
+        }
+    }
+}

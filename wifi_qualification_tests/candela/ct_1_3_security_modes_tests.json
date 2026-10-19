@@ -1,0 +1,414 @@
+{
+    "ct_1_3_security_modes_tests": {
+        "Notes": [
+            "Test 1.3: Client Connectivity - Security Modes.",
+            "18 suite entries = 6 security modes x 3 bands (2g/5g/6g).",
+            "Suite key format: 1_3_{case_id}_{band} -- matched by test_1_3_security_modes.py.",
+            "sta_connect2.py drives: open / wpa2-psk / wpa3-sae-h2e / wpa2-wpa3-transition / owe.",
+            "test_ipv4_ttls.py drives: wpa3-enterprise (enabled=FALSE until RADIUS is available).",
+            "6G open and 6G wpa2-psk are disabled: Wi-Fi 6E/7 mandates WPA3/OWE on 6 GHz.",
+            "Radio mapping: wiphy0=2.4G, wiphy1=5G, wiphy2=6G -- update after confirming AT7 layout.",
+            "LF_MGR_IP / UPSTREAM_PORT / REPORT_PATH / TEST_RIG are substituted by lf_check.py",
+            "from the rig JSON; pytest LANforgeRunner inlines them from the environment YAML."
+        ]
+    },
+    "test_suites": {
+
+        "1_3_open_2g": {
+            "sta_connect2_open_2g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--dut_ssid MTK-Test-2G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security open",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_open_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_open_5g": {
+            "sta_connect2_open_5g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--dut_ssid MTK-Test-5G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security open",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_open_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_open_6g": {
+            "sta_connect2_open_6g": {
+                "enabled":   "FALSE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--dut_ssid MTK-Test-6G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security open",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_open_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-psk_2g": {
+            "sta_connect2_wpa2_2g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--dut_ssid MTK-Test-2G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa2_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-psk_5g": {
+            "sta_connect2_wpa2_5g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--dut_ssid MTK-Test-5G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa2_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-psk_6g": {
+            "sta_connect2_wpa2_6g": {
+                "enabled":   "FALSE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--dut_ssid MTK-Test-6G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa2_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-sae-h2e_2g": {
+            "sta_connect2_wpa3_2g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--dut_ssid MTK-Test-2G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa3",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa3_sae_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-sae-h2e_5g": {
+            "sta_connect2_wpa3_5g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--dut_ssid MTK-Test-5G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa3",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa3_sae_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-sae-h2e_6g": {
+            "sta_connect2_wpa3_6g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--dut_ssid MTK-Test-6G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa3",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_wpa3_sae_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-wpa3-transition_2g": {
+            "sta_connect2_transition_2g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--dut_ssid MTK-Test-2G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa2",
+                    "--num_stations 32",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_transition_wpa2_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-wpa3-transition_5g": {
+            "sta_connect2_transition_5g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--dut_ssid MTK-Test-5G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa2",
+                    "--num_stations 32",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_transition_wpa2_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa2-wpa3-transition_6g": {
+            "sta_connect2_transition_6g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--dut_ssid MTK-Test-6G",
+                    "--dut_passwd TestPassphrase1234",
+                    "--dut_security wpa3",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_transition_wpa3_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-enterprise_2g": {
+            "ttls_enterprise_2g": {
+                "enabled":   "FALSE",
+                "load_db":   "skip",
+                "command":   "test_ipv4_ttls.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--ssid MTK-Test-2G-ENT",
+                    "--passwd [BLANK]",
+                    "--security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_enterprise_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-enterprise_5g": {
+            "ttls_enterprise_5g": {
+                "enabled":   "FALSE",
+                "load_db":   "skip",
+                "command":   "test_ipv4_ttls.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--ssid MTK-Test-5G-ENT",
+                    "--passwd [BLANK]",
+                    "--security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_enterprise_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_wpa3-enterprise_6g": {
+            "ttls_enterprise_6g": {
+                "enabled":   "FALSE",
+                "load_db":   "skip",
+                "command":   "test_ipv4_ttls.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--ssid MTK-Test-6G-ENT",
+                    "--passwd [BLANK]",
+                    "--security wpa2",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_enterprise_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_owe_2g": {
+            "sta_connect2_owe_2g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy0",
+                    "--dut_ssid MTK-Test-2G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security owe",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_owe_2g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_owe_5g": {
+            "sta_connect2_owe_5g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy1",
+                    "--dut_ssid MTK-Test-5G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security owe",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_owe_5g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        },
+
+        "1_3_owe_6g": {
+            "sta_connect2_owe_6g": {
+                "enabled":   "TRUE",
+                "load_db":   "skip",
+                "command":   "sta_connect2.py",
+                "args":      "",
+                "args_list": [
+                    "--mgr LF_MGR_IP",
+                    "--upstream_port UPSTREAM_PORT",
+                    "--local_lf_report_dir REPORT_PATH",
+                    "--radio 1.1.wiphy2",
+                    "--dut_ssid MTK-Test-6G",
+                    "--dut_passwd [BLANK]",
+                    "--dut_security owe",
+                    "--num_stations 64",
+                    "--test_rig TEST_RIG",
+                    "--test_tag 1.3_owe_6g",
+                    "--dut_model_num MTK7999-AP"
+                ]
+            }
+        }
+
+    }
+}
